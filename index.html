@@ -1,0 +1,332 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Drozda AI — Pool Marketing Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0f0f0f;
+    --ink-soft: #3a3a3a;
+    --ink-muted: #7a7a7a;
+    --bone: #f5f3ee;
+    --white: #ffffff;
+    --rule: #e2dfd8;
+    --amber: #c8873a;
+    --amber-light: #f5e8d6;
+    --amber-dark: #a86d25;
+    --green: #2d6a4f;
+    --green-light: #d8f0e4;
+    --red-light: #fde8e8;
+    --red: #c0392b;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bone);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--ink);
+    color: var(--white);
+    padding: 18px 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 3px solid var(--amber);
+  }
+
+  .logo-name { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+  .logo-name span { color: var(--amber); }
+  .logo-sub { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #888; margin-top: 3px; }
+  .header-badge { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: var(--amber); border: 1px solid var(--amber); padding: 5px 12px; border-radius: 2px; }
+
+  .hero { background: var(--ink); color: var(--white); padding: 36px; border-bottom: 1px solid #222; }
+  .hero h1 { font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 700; line-height: 1.15; max-width: 600px; margin-bottom: 8px; }
+  .hero h1 em { font-style: italic; color: var(--amber); }
+  .hero p { font-size: 0.9rem; color: #aaa; max-width: 480px; line-height: 1.65; }
+
+  main { flex: 1; padding: 36px; max-width: 820px; width: 100%; margin: 0 auto; }
+
+  .section-label { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; color: var(--amber); margin-bottom: 8px; }
+
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); }
+  input, select, textarea { font-family: inherit; font-size: 0.88rem; background: var(--white); border: 1.5px solid var(--rule); border-radius: 4px; padding: 9px 12px; color: var(--ink); width: 100%; outline: none; transition: border-color 0.15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--amber); }
+  textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+  select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a7a7a' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; cursor: pointer; }
+
+  .generate-btn { background: var(--amber); color: var(--white); border: none; border-radius: 4px; padding: 13px 28px; font-family: inherit; font-size: 0.95rem; font-weight: 700; cursor: pointer; width: 100%; transition: all 0.15s; margin-top: 4px; }
+  .generate-btn:hover:not(:disabled) { background: var(--amber-dark); }
+  .generate-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .divider { border: none; border-top: 1px solid var(--rule); margin: 28px 0; }
+
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+  .stat { background: var(--white); border: 1.5px solid var(--rule); border-radius: 4px; padding: 12px 14px; }
+  .stat-val { font-size: 1.6rem; font-weight: 700; color: var(--ink); }
+  .stat-lbl { font-size: 0.68rem; color: var(--ink-muted); margin-top: 2px; }
+
+  .outputs { display: flex; flex-direction: column; gap: 14px; }
+
+  .card { background: var(--white); border: 1.5px solid var(--rule); border-radius: 6px; overflow: hidden; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bone); border-bottom: 1px solid var(--rule); }
+  .card-meta { display: flex; align-items: center; gap: 8px; }
+  .card-icon { font-size: 1.1rem; }
+  .card-label { font-size: 0.85rem; font-weight: 700; color: var(--ink); }
+  .card-ready { font-size: 0.68rem; font-weight: 700; padding: 3px 9px; border-radius: 20px; background: var(--green-light); color: var(--green); display: none; }
+  .card-body { padding: 16px; }
+  .card-text { font-size: 0.88rem; line-height: 1.75; color: var(--ink-soft); white-space: pre-wrap; min-height: 40px; }
+  .card-text.loading { color: var(--ink-muted); font-style: italic; }
+  .card-text.error { color: var(--red); }
+  .card-text.done { color: var(--ink); border-left: 3px solid var(--amber); padding-left: 12px; }
+  .copy-btn { margin-top: 10px; background: none; border: 1.5px solid var(--rule); border-radius: 4px; padding: 6px 14px; font-family: inherit; font-size: 0.72rem; font-weight: 700; color: var(--ink-muted); cursor: pointer; letter-spacing: 0.06em; text-transform: uppercase; display: none; transition: all 0.15s; }
+  .copy-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+  .time-saved { margin-top: 20px; background: var(--green-light); border: 1.5px solid #a8d5be; border-radius: 4px; padding: 14px 18px; display: none; }
+  .time-saved strong { display: block; font-size: 0.85rem; font-weight: 700; color: var(--green); margin-bottom: 3px; }
+  .time-saved p { font-size: 0.8rem; color: #3a6b53; line-height: 1.55; }
+
+  footer { background: var(--ink); color: #555; text-align: center; padding: 16px; font-size: 0.7rem; letter-spacing: 0.08em; }
+  footer span { color: var(--amber); }
+
+  @media (max-width: 580px) { .fields { grid-template-columns: 1fr; } header, .hero, main { padding: 20px; } .stats { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo-name">Drozda <span>AI</span></div>
+    <div class="logo-sub">AI Implementation for Small Business</div>
+  </div>
+  <div class="header-badge">Live Demo</div>
+</header>
+
+<div class="hero">
+  <h1>One project. <em>Four pieces</em> of marketing content. Fifteen seconds.</h1>
+  <p>Describe a completed pool project and watch AI generate a Facebook post, Google Business update, customer email, and photo captions — all at once.</p>
+</div>
+
+<main>
+  <div class="section-label">Project Details</div>
+
+  <div class="fields">
+    <div class="field">
+      <label>Company Name</label>
+      <input type="text" id="company" placeholder="e.g. Miller Pools" oninput="checkReady()" />
+    </div>
+    <div class="field">
+      <label>Location</label>
+      <input type="text" id="location" placeholder="e.g. Mansfield, Ohio" oninput="checkReady()" />
+    </div>
+    <div class="field">
+      <label>Pool Size and Type</label>
+      <input type="text" id="poolType" placeholder="e.g. 16x32 inground with tanning ledge" oninput="checkReady()" />
+    </div>
+    <div class="field">
+      <label>Special Features</label>
+      <input type="text" id="features" placeholder="e.g. waterfall, LED lighting, custom deck" oninput="checkReady()" />
+    </div>
+    <div class="field full">
+      <label>Project Story or Customer Details</label>
+      <textarea id="story" placeholder="e.g. Young family with two kids. They waited 3 years for this. Project took 6 weeks. Customer left a 5-star review and said it was better than they imagined." oninput="checkReady()"></textarea>
+    </div>
+    <div class="field">
+      <label>Tone</label>
+      <select id="tone">
+        <option value="warm and proud">Warm and proud</option>
+        <option value="professional and confident">Professional and confident</option>
+        <option value="casual and friendly">Casual and friendly</option>
+        <option value="exciting and energetic">Exciting and energetic</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Call to Action</label>
+      <input type="text" id="cta" placeholder="e.g. Call us for a free quote" oninput="checkReady()" />
+    </div>
+  </div>
+
+  <button class="generate-btn" id="generateBtn" onclick="generateAll()" disabled>
+    Generate all 4 pieces of content
+  </button>
+
+  <div id="outputArea" style="display:none;">
+    <hr class="divider" />
+
+    <div class="stats">
+      <div class="stat"><div class="stat-val" id="statTime">—</div><div class="stat-lbl">Seconds to generate</div></div>
+      <div class="stat"><div class="stat-val">4</div><div class="stat-lbl">Pieces of content</div></div>
+      <div class="stat"><div class="stat-val" id="statWords">—</div><div class="stat-lbl">Words written</div></div>
+    </div>
+
+    <div class="outputs">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-meta"><span class="card-icon">📘</span><span class="card-label">Facebook Post</span></div>
+          <span class="card-ready" id="ready-fb">Ready</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text loading" id="out-fb">Waiting...</div>
+          <button class="copy-btn" id="copy-fb" onclick="copyText('out-fb','copy-fb')">Copy</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-meta"><span class="card-icon">🔍</span><span class="card-label">Google Business Update</span></div>
+          <span class="card-ready" id="ready-google">Ready</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text loading" id="out-google">Waiting...</div>
+          <button class="copy-btn" id="copy-google" onclick="copyText('out-google','copy-google')">Copy</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-meta"><span class="card-icon">✉️</span><span class="card-label">Email to Past Customers</span></div>
+          <span class="card-ready" id="ready-email">Ready</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text loading" id="out-email">Waiting...</div>
+          <button class="copy-btn" id="copy-email" onclick="copyText('out-email','copy-email')">Copy</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-meta"><span class="card-icon">📷</span><span class="card-label">Photo Captions</span></div>
+          <span class="card-ready" id="ready-caption">Ready</span>
+        </div>
+        <div class="card-body">
+          <div class="card-text loading" id="out-caption">Waiting...</div>
+          <button class="copy-btn" id="copy-caption" onclick="copyText('out-caption','copy-caption')">Copy</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="time-saved" id="timeSaved">
+      <strong>Time reclaimed</strong>
+      <p>A marketing assistant would spend 2 to 3 hours writing these four pieces. A freelancer would charge $150 to $300. AI did it in seconds — and it used the real details of a real project. This runs every time a job is completed.</p>
+    </div>
+  </div>
+</main>
+
+<footer><span>Drozda AI</span> &nbsp;·&nbsp; coachscottdrozda.com &nbsp;·&nbsp; AI Implementation for Small Business</footer>
+
+<script>
+  function checkReady() {
+    const hasCompany = document.getElementById('company').value.trim().length > 0;
+    const hasStory = document.getElementById('story').value.trim().length > 0;
+    document.getElementById('generateBtn').disabled = !(hasCompany && hasStory);
+  }
+
+  async function callAPI(system, prompt) {
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system, prompt })
+    });
+    const data = await res.json();
+    if (data.text) return data.text;
+    throw new Error(data.error || 'Unknown error');
+  }
+
+  function setCard(id, text, isError) {
+    const el = document.getElementById('out-' + id);
+    el.textContent = text;
+    el.className = 'card-text' + (isError ? ' error' : ' done');
+    if (!isError) {
+      document.getElementById('ready-' + id).style.display = 'inline';
+      document.getElementById('copy-' + id).style.display = 'inline';
+    }
+  }
+
+  function setLoading(id) {
+    const el = document.getElementById('out-' + id);
+    el.textContent = 'Writing...';
+    el.className = 'card-text loading';
+    document.getElementById('ready-' + id).style.display = 'none';
+    document.getElementById('copy-' + id).style.display = 'none';
+  }
+
+  async function generateAll() {
+    const company = document.getElementById('company').value.trim();
+    const location = document.getElementById('location').value.trim() || 'Ohio';
+    const poolType = document.getElementById('poolType').value.trim() || 'custom pool';
+    const features = document.getElementById('features').value.trim();
+    const story = document.getElementById('story').value.trim();
+    const tone = document.getElementById('tone').value;
+    const cta = document.getElementById('cta').value.trim() || 'Contact us for a free quote';
+
+    document.getElementById('outputArea').style.display = 'block';
+    document.getElementById('generateBtn').disabled = true;
+    document.getElementById('generateBtn').textContent = 'Generating...';
+    document.getElementById('timeSaved').style.display = 'none';
+    document.getElementById('statTime').textContent = '...';
+    document.getElementById('statWords').textContent = '...';
+
+    ['fb','google','email','caption'].forEach(setLoading);
+
+    const system = 'You are an expert marketing copywriter for a pool installation company. Write in a genuine, specific, human voice. Never use generic filler phrases. Output only the finished content with no preamble or explanation.';
+    const ctx = `Company: ${company} in ${location}. Pool: ${poolType}${features ? ', features: ' + features : ''}. ${story}. Tone: ${tone}. Call to action: ${cta}.`;
+
+    const prompts = {
+      fb: `Write a Facebook post for ${company} celebrating this completed pool project. ${ctx} Include 2 to 3 relevant hashtags at the end. Under 120 words.`,
+      google: `Write a Google Business post for ${company} about this recently completed project. ${ctx} Professional and trustworthy. Under 100 words. No hashtags.`,
+      email: `Write a short email from ${company} to past customers. Include a subject line. Share excitement about a recent project and invite them to think about their own backyard. ${ctx} Warm, not salesy. Under 150 words.`,
+      caption: `Write 3 different photo caption options for ${company} to post alongside a photo of this completed pool on Instagram or Facebook. ${ctx} Each caption 1 to 2 sentences. Number them 1, 2, 3.`
+    };
+
+    const start = Date.now();
+
+    const results = await Promise.allSettled([
+      callAPI(system, prompts.fb),
+      callAPI(system, prompts.google),
+      callAPI(system, prompts.email),
+      callAPI(system, prompts.caption)
+    ]);
+
+    const elapsed = ((Date.now() - start) / 1000).toFixed(1);
+    const ids = ['fb','google','email','caption'];
+    let totalWords = 0;
+
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') {
+        setCard(ids[i], result.value, false);
+        totalWords += result.value.split(/\s+/).filter(Boolean).length;
+      } else {
+        setCard(ids[i], 'Generation failed. Check your Vercel environment variable and redeploy.', true);
+      }
+    });
+
+    document.getElementById('statTime').textContent = elapsed;
+    document.getElementById('statWords').textContent = totalWords;
+    document.getElementById('timeSaved').style.display = 'block';
+    document.getElementById('generateBtn').disabled = false;
+    document.getElementById('generateBtn').textContent = 'Generate again';
+    checkReady();
+  }
+
+  function copyText(textId, btnId) {
+    const text = document.getElementById(textId).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById(btnId);
+      btn.textContent = 'Copied';
+      setTimeout(() => btn.textContent = 'Copy', 2000);
+    });
+  }
+</script>
+</body>
+</html>
